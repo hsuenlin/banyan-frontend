@@ -5,7 +5,7 @@ interface RephraseToggleProps {
   originalText: string;
 }
 
-export default function RephraseToggle({ originalText }: RephraseToggleProps): JSX.Element {
+export default function RephraseToggle({ originalText }: RephraseToggleProps) {
   const [text, setText] = useState<string>(originalText);
   const [isRephrased, setIsRephrased] = useState<boolean>(false);
 

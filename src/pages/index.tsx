@@ -6,7 +6,7 @@ import LoginBox from "@/components/LoginBox";
 
 type Tab = "posts" | "login";
 
-export default function Home(): JSX.Element {
+export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("posts");
 
   return (

@@ -6,7 +6,7 @@ interface PostProps {
   time: string;
 }
 
-export default function Post({ content, username, time }: PostProps): JSX.Element {
+export default function Post({ content, username, time }: PostProps) {
   return (
     <div className="p-4 border shadow-md mb-4">
       <div className="flex justify-between">

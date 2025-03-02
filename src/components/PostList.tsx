@@ -8,7 +8,7 @@ export interface PostType {
   time: string;
 }
 
-export default function PostList(): JSX.Element {
+export default function PostList() {
   const [posts, setPosts] = useState<PostType[]>([]);
 
   useEffect(() => {

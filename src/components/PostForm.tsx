@@ -1,4 +1,4 @@
-export default function PostForm(): JSX.Element {
+export default function PostForm() {
     return (
       <div className="p-4 border shadow-md">
         <textarea className="w-full p-2 border" placeholder="發表你的想法..."></textarea>

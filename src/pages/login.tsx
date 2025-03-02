@@ -1,5 +1,5 @@
 import LoginBox from "@/components/LoginBox";
 
-export default function Login(): JSX.Element {
+export default function Login() {
   return <LoginBox />;
 }
