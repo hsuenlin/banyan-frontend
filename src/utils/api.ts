@@ -54,31 +54,52 @@ export async function fetchPosts(): Promise<Post[]> {
 
 export async function createPost(user_id: string, content: string): Promise<{ message: string }> {
   try {
+    // Try to fetch from the real API
+    console.log("Posting with payload:", { user_id, content });
+    
     const res = await fetch(`${API_URL}/post`, {
       method: "POST",
       headers: { 
-        "Content-Type": "application/json" 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       },
       body: JSON.stringify({ user_id, content }),
     });
+    
+    // Even if the response isn't ok, let's log what came back
+    const responseText = await res.text();
+    console.log(`API response ${res.status}:`, responseText);
     
     if (!res.ok) {
       throw new Error(`API returned status: ${res.status}`);
     }
     
-    return await res.json();
+    // Try to parse response as JSON
+    let responseJson;
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch (e) {
+      console.warn("Response wasn't valid JSON");
+      responseJson = { message: "操作成功" };
+    }
+    
+    return responseJson;
   } catch (error) {
     console.warn('Using mock response for createPost:', error);
-    // Simulate successful post creation
-    MOCK_POSTS.unshift({
+    // Simulate successful post creation with mock data
+    const newPost = {
       id: `mock-${Date.now()}`,
       content,
       username: "測試使用者",
       time: "剛剛",
       user_id
-    });
+    };
     
-    return { message: "發文成功！" };
+    // Add to the beginning of the mock posts array
+    MOCK_POSTS.unshift(newPost);
+    
+    // Return success response
+    return { message: "發文成功！(本地模擬)" };
   }
 }
 

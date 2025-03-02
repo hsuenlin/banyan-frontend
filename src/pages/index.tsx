@@ -49,9 +49,24 @@ export default function Home() {
 
     try {
       setIsLoading(true);
-      await createPost(user?.id || "", newPostContent);
+      const result = await createPost(user?.id || "", newPostContent);
+      console.log("Post result:", result);
       setNewPostContent("");
-      await loadPosts(); // Reload posts after submission
+      
+      // Show success message
+      setError("");
+      alert(result.message || "發文成功！");
+      
+      // Add the new post to the local state without reloading
+      const newPost: Post = {
+        id: `local-${Date.now()}`,
+        content: newPostContent,
+        username: user?.name || "測試使用者",
+        time: "剛剛",
+        userId: user?.id
+      };
+      
+      setPosts([newPost, ...posts]);
     } catch (error) {
       console.error("Error creating post:", error);
       setError("Failed to create post. Please try again.");
@@ -149,6 +164,9 @@ export default function Home() {
                 </svg>
                 使用 Google 帳號登入
               </button>
+              <div className="mt-4 text-sm text-gray-500 max-w-xs mx-auto">
+                <strong>注意：</strong> 這是模擬登入，目前沒有連接真正的 Google OAuth。在實際使用中，這會連接到 Google 的身份驗證服務。
+              </div>
             </div>
           </div>
         ) : (
@@ -203,15 +221,18 @@ export default function Home() {
                         <div className="post-username font-bold">{post.username}</div>
                         <div className="post-time text-gray-500 text-sm ml-2">{post.time}</div>
                       </div>
-                      <div className={`post-mode px-2 py-1 border border-black ${post.isRephrased ? "bg-teal-400" : ""}`}>
+                      <div className={`post-mode px-2 py-1 border border-black ${post.isRephrased ? "bg-teal-400 text-white font-bold" : ""}`}>
                         {post.isRephrased ? "替代說法" : "原文"}
                       </div>
                     </div>
                     
-                    <div className="post-content mb-4">
+                    <div className={`post-content mb-4 p-3 rounded ${post.isRephrased ? 'bg-teal-50 border-l-4 border-teal-400' : ''}`}>
                       {post.isRephrased && post.rephrased_content 
-                        ? post.rephrased_content 
-                        : post.content}
+                        ? <div>
+                            <div className="text-xs text-teal-700 mb-1 font-semibold">替代說法：</div>
+                            <div className="text-teal-800">{post.rephrased_content}</div>
+                          </div> 
+                        : <div>{post.content}</div>}
                     </div>
                     
                     <div className="post-footer flex gap-4">
