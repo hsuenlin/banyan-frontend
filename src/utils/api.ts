@@ -94,7 +94,7 @@ export async function createPost(user_id: string, content: string): Promise<{ me
         },
         body: JSON.stringify(payload)
       });
-    } catch (_) {
+    } catch {
       console.log("JSON 方式失敗，嘗試 FormData 格式");
       // 方式 2: FormData 格式
       response = await fetch(`${API_URL}/post`, {
@@ -115,7 +115,7 @@ export async function createPost(user_id: string, content: string): Promise<{ me
     let responseJson;
     try {
       responseJson = JSON.parse(responseText);
-    } catch (_) {
+    } catch {
       console.warn("回應不是有效的 JSON 格式");
       responseJson = { message: "操作成功" };
     }
