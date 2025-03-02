@@ -5,7 +5,7 @@ interface HeaderProps {
   setActiveTab: React.Dispatch<React.SetStateAction<"posts" | "login">>;
 }
 
-export default function Header({ activeTab, setActiveTab }: HeaderProps): JSX.Element {
+export default function Header({ activeTab, setActiveTab }: HeaderProps) {
   return (
     <div className="flex border-b">
       <button
