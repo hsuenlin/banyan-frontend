@@ -5,14 +5,16 @@ export interface Post {
   username: string;
   time: string;
   user_id?: string;
+  rephrased_content?: string;
+  isRephrased?: boolean;
 }
 
-// Fix the API_URL by ensuring it doesn't have a trailing slash
+// 修正 API_URL 的格式問題
 const API_URL = process.env.NEXT_PUBLIC_API_URL 
   ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
   : "https://banyan-api-production.up.railway.app";
 
-// For testing when API has CORS issues
+// 範例貼文資料
 const MOCK_POSTS: Post[] = [
   {
     id: "1",
@@ -30,63 +32,99 @@ const MOCK_POSTS: Post[] = [
   }
 ];
 
+/**
+ * 取得貼文列表
+ */
 export async function fetchPosts(): Promise<Post[]> {
   try {
-    // Try to fetch from the real API
+    console.log("嘗試從 API 獲取貼文:", `${API_URL}/posts`);
+    
     const res = await fetch(`${API_URL}/posts`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      // 嘗試不同的模式解決 CORS 問題
+      mode: 'cors',
     });
     
     if (!res.ok) {
-      throw new Error(`API returned status: ${res.status}`);
+      console.error(`API 回傳錯誤狀態: ${res.status}`);
+      throw new Error(`API 回傳狀態: ${res.status}`);
     }
     
-    return await res.json();
+    const data = await res.json();
+    console.log("成功取得貼文:", data);
+    return data;
   } catch (error) {
-    console.warn('Using mock data due to API error:', error);
-    // Return mock data if the API call fails
+    console.warn('使用本地模擬資料, API 錯誤:', error);
+    // 失敗時回傳模擬資料
     return MOCK_POSTS;
   }
 }
 
+/**
+ * 建立新貼文
+ */
 export async function createPost(user_id: string, content: string): Promise<{ message: string }> {
   try {
-    // Try to fetch from the real API
-    console.log("Posting with payload:", { user_id, content });
+    // 確保格式正確
+    const payload = {
+      content: content,
+      user_id: user_id
+    };
     
-    const res = await fetch(`${API_URL}/post`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({ user_id, content }),
-    });
+    console.log("嘗試發送貼文, 資料:", payload);
+    console.log("目標 API 網址:", `${API_URL}/post`);
     
-    // Even if the response isn't ok, let's log what came back
-    const responseText = await res.text();
-    console.log(`API response ${res.status}:`, responseText);
+    // 改用 FormData 嘗試解決格式問題
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('user_id', user_id);
     
-    if (!res.ok) {
-      throw new Error(`API returned status: ${res.status}`);
+    // 嘗試兩種方式呼叫 API
+    let response;
+    try {
+      // 方式 1: JSON 格式
+      response = await fetch(`${API_URL}/post`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (_) {
+      console.log("JSON 方式失敗，嘗試 FormData 格式");
+      // 方式 2: FormData 格式
+      response = await fetch(`${API_URL}/post`, {
+        method: 'POST',
+        body: formData
+      });
     }
     
-    // Try to parse response as JSON
+    // 讀取回應文字，無論成功與否
+    const responseText = await response.text();
+    console.log(`API 回應 ${response.status}:`, responseText);
+    
+    if (!response.ok) {
+      throw new Error(`API 回傳狀態: ${response.status}`);
+    }
+    
+    // 嘗試解析 JSON 回應
     let responseJson;
     try {
       responseJson = JSON.parse(responseText);
-    } catch (e) {
-      console.warn("Response wasn't valid JSON");
+    } catch (_) {
+      console.warn("回應不是有效的 JSON 格式");
       responseJson = { message: "操作成功" };
     }
     
     return responseJson;
   } catch (error) {
-    console.warn('Using mock response for createPost:', error);
-    // Simulate successful post creation with mock data
+    console.warn('使用本地模擬回應:', error);
+    
+    // 使用本地模擬資料
     const newPost = {
       id: `mock-${Date.now()}`,
       content,
@@ -95,16 +133,20 @@ export async function createPost(user_id: string, content: string): Promise<{ me
       user_id
     };
     
-    // Add to the beginning of the mock posts array
+    // 添加到本地模擬貼文列表
     MOCK_POSTS.unshift(newPost);
     
-    // Return success response
     return { message: "發文成功！(本地模擬)" };
   }
 }
 
+/**
+ * 獲取替代說法
+ */
 export async function rephraseContent(content: string): Promise<{ rephrased: string }> {
   try {
+    console.log("嘗試獲取替代說法:", content);
+    
     const res = await fetch(`${API_URL}/rephrase`, {
       method: "POST",
       headers: { 
@@ -114,32 +156,45 @@ export async function rephraseContent(content: string): Promise<{ rephrased: str
     });
     
     if (!res.ok) {
-      throw new Error(`API returned status: ${res.status}`);
+      throw new Error(`API 回傳狀態: ${res.status}`);
     }
     
-    return await res.json();
+    const data = await res.json();
+    console.log("成功獲取替代說法:", data);
+    return data;
   } catch (error) {
-    console.warn('Using mock rephrase function:', error);
-    // Simple mock rephrase function
-    return { 
-      rephrased: mockRephrase(content)
-    };
+    console.warn('使用本地模擬替代說法:', error);
+    
+    // 使用本地替代說法功能
+    return { rephrased: mockRephrase(content) };
   }
 }
 
-// Mock function to simulate rephrasing
+/**
+ * 本地替代說法功能
+ */
 function mockRephrase(text: string): string {
-  // Some basic replacements to make the text more polite and rational
-  return text
-    .replace(/完全是在開倒車/g, '可能未能達到理想效果')
-    .replace(/把學生當成考試機器/g, '過於注重考試成績')
-    .replace(/愚蠢的政策/g, '需要重新思考的政策')
-    .replace(/限制AI的發展/g, '平衡科技發展與就業保障')
-    .replace(/失業潦倒/g, '面臨就業轉型的挑戰')
-    .replace(/!+/g, '。')
-    .replace(/！+/g, '。')
-    .replace(/立即停止/g, '建議重新評估')
-    .replace(/只會扼殺創意/g, '可能會限制創意發展')
-    .replace(/讓人又愛又恨/g, '帶來雙面影響')
-    .replace(/只有科技巨頭賺錢/g, '需要確保技術發展成果能更廣泛地惠及社會');
+  // 基本替換以模擬改寫
+  const replacements: Record<string, string> = {
+    "完全是在開倒車": "可能未能達到理想效果",
+    "把學生當成考試機器": "過於注重考試成績",
+    "老師只能照本宣科": "老師教學自由度受限",
+    "愚蠢的政策": "需要重新思考的政策",
+    "限制AI的發展": "平衡科技發展與就業保障",
+    "失業潦倒": "面臨就業轉型的挑戰",
+    "立即停止": "建議重新評估",
+    "只會扼殺創意": "可能會限制創意發展",
+    "讓人又愛又恨": "帶來雙面影響",
+    "只有科技巨頭賺錢": "需要確保技術發展成果能更廣泛地惠及社會",
+    "完全違背教育的本質": "有違教育多元發展的理念",
+    "!": "。",
+    "！": "。"
+  };
+  
+  let result = text;
+  for (const [original, replacement] of Object.entries(replacements)) {
+    result = result.replace(new RegExp(original, 'g'), replacement);
+  }
+  
+  return result;
 }

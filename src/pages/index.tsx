@@ -2,81 +2,77 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./_app";
 import Head from "next/head";
-import { fetchPosts, createPost, rephraseContent } from "@/utils/api";
-
-type Post = {
-  id: string;
-  content: string;
-  username: string;
-  time: string;
-  original_content?: string;
-  rephrased_content?: string;
-  isRephrased?: boolean;
-  replies?: Post[];
-  userId?: string;
-};
+import { fetchPosts, createPost, rephraseContent, Post as PostType } from "@/utils/api";
 
 export default function Home() {
   const { user, isAuthenticated, login, logout } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostType[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  // Fetch posts when component mounts
+  // 當組件載入和登入狀態改變時獲取貼文
   useEffect(() => {
     if (isAuthenticated) {
       loadPosts();
     }
   }, [isAuthenticated]);
 
+  // 獲取貼文列表
   const loadPosts = async () => {
     try {
       setIsLoading(true);
       const fetchedPosts = await fetchPosts();
       setPosts(fetchedPosts);
     } catch (error) {
-      console.error("Error fetching posts:", error);
-      setError("Failed to load posts. Please try again later.");
+      console.error("獲取貼文時出錯:", error);
+      setError("無法載入貼文。請稍後再試。");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 處理發布新貼文
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostContent.trim() || !isAuthenticated) return;
 
     try {
       setIsLoading(true);
+      setError("");
+      
       const result = await createPost(user?.id || "", newPostContent);
-      console.log("Post result:", result);
+      console.log("發文結果:", result);
+      
+      // 顯示成功訊息
+      setSuccess(result.message || "發文成功！");
+      setTimeout(() => setSuccess(""), 3000); // 3秒後消失
+      
+      // 清空輸入框
       setNewPostContent("");
       
-      // Show success message
-      setError("");
-      alert(result.message || "發文成功！");
-      
-      // Add the new post to the local state without reloading
-      const newPost: Post = {
+      // 在本地貼文列表中新增該貼文而不重新載入
+      const newPost: PostType = {
         id: `local-${Date.now()}`,
         content: newPostContent,
         username: user?.name || "測試使用者",
         time: "剛剛",
-        userId: user?.id
+        user_id: user?.id
       };
       
       setPosts([newPost, ...posts]);
     } catch (error) {
-      console.error("Error creating post:", error);
-      setError("Failed to create post. Please try again.");
+      console.error("發布貼文時出錯:", error);
+      setError("發布貼文失敗。請稍後再試。");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleToggleRephrase = async (post: Post) => {
-    // If we already have the rephrased content, just toggle it
+  // 處理替代說法切換
+  const handleToggleRephrase = async (post: PostType) => {
+    // 如果已經有替代說法內容，只需切換顯示
     if (post.rephrased_content) {
       const updatedPosts = posts.map(p => 
         p.id === post.id ? { ...p, isRephrased: !p.isRephrased } : p
@@ -85,7 +81,7 @@ export default function Home() {
       return;
     }
     
-    // Otherwise, fetch the rephrased content
+    // 否則，獲取替代說法
     try {
       setIsLoading(true);
       const response = await rephraseContent(post.content);
@@ -95,21 +91,20 @@ export default function Home() {
           { 
             ...p, 
             rephrased_content: response.rephrased,
-            original_content: p.content,
             isRephrased: true 
           } : p
       );
       
       setPosts(updatedPosts);
     } catch (error) {
-      console.error("Error rephrasing content:", error);
-      setError("Failed to rephrase content. Please try again.");
+      console.error("獲取替代說法時出錯:", error);
+      setError("無法獲取替代說法。請稍後再試。");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mock login (in a real app, this would integrate with Google OAuth)
+  // 模擬登入（實際應用中會使用 Google OAuth）
   const handleMockLogin = () => {
     login({
       id: "user-" + Math.random().toString(36).substring(2, 9),
@@ -123,7 +118,6 @@ export default function Home() {
       <Head>
         <title>Banyan 社群平台</title>
         <meta name="description" content="Banyan 社群平台 - 讓討論更理性" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
       <div className="container mx-auto max-w-3xl p-4">
@@ -134,7 +128,7 @@ export default function Home() {
         </div>
 
         {!isAuthenticated ? (
-          // Login Page
+          // 登入頁面
           <div className="login-page shadow-md border border-black p-8 flex flex-col items-center">
             <div className="login-box max-w-md w-full">
               <div className="flex justify-center mb-8">
@@ -165,14 +159,14 @@ export default function Home() {
                 使用 Google 帳號登入
               </button>
               <div className="mt-4 text-sm text-gray-500 max-w-xs mx-auto">
-                <strong>注意：</strong> 這是模擬登入，目前沒有連接真正的 Google OAuth。在實際使用中，這會連接到 Google 的身份驗證服務。
+                <strong>注意：</strong> 這是模擬登入，目前尚未連接真正的 Google 帳號驗證服務。
               </div>
             </div>
           </div>
         ) : (
-          // Post Page
+          // 貼文頁面
           <div className="post-page">
-            {/* Post Compose */}
+            {/* 發文區域 */}
             <div className="post-compose border border-black shadow-md p-5 mb-8">
               <textarea 
                 className="post-textarea w-full border border-black p-4 mb-4 min-h-[100px]"
@@ -191,20 +185,31 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded">
-                {error}
-                <button 
-                  className="float-right"
-                  onClick={() => setError("")}
-                >
-                  &times;
-                </button>
+            {/* 成功訊息 */}
+            {success && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4 rounded relative">
+                <span className="block sm:inline">{success}</span>
+                <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setSuccess("")}>
+                  <svg className="fill-current h-6 w-6 text-green-500" role="button" viewBox="0 0 20 20">
+                    <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                  </svg>
+                </span>
               </div>
             )}
 
-            {/* Post List */}
+            {/* 錯誤訊息 */}
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded relative">
+                <span className="block sm:inline">{error}</span>
+                <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError("")}>
+                  <svg className="fill-current h-6 w-6 text-red-500" role="button" viewBox="0 0 20 20">
+                    <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                  </svg>
+                </span>
+              </div>
+            )}
+
+            {/* 貼文列表 */}
             <div className="post-list space-y-6">
               {isLoading && !posts.length ? (
                 <div className="text-center py-8">載入中...</div>
@@ -216,31 +221,51 @@ export default function Home() {
                     <div className="post-header flex justify-between mb-4">
                       <div className="post-header-left flex items-center">
                         <div className="post-avatar bg-purple-600 text-white w-10 h-10 flex items-center justify-center font-bold mr-3 border border-black">
-                          {post.username.charAt(0)}
+                          {post.username?.charAt(0) || 'U'}
                         </div>
                         <div className="post-username font-bold">{post.username}</div>
                         <div className="post-time text-gray-500 text-sm ml-2">{post.time}</div>
                       </div>
-                      <div className={`post-mode px-2 py-1 border border-black ${post.isRephrased ? "bg-teal-400 text-white font-bold" : ""}`}>
+                      <div className={`post-mode border border-black p-1 px-2 text-sm ${
+                        post.isRephrased 
+                          ? "bg-teal-500 text-white font-bold" 
+                          : "bg-white"
+                      }`}>
                         {post.isRephrased ? "替代說法" : "原文"}
                       </div>
                     </div>
                     
-                    <div className={`post-content mb-4 p-3 rounded ${post.isRephrased ? 'bg-teal-50 border-l-4 border-teal-400' : ''}`}>
-                      {post.isRephrased && post.rephrased_content 
-                        ? <div>
-                            <div className="text-xs text-teal-700 mb-1 font-semibold">替代說法：</div>
-                            <div className="text-teal-800">{post.rephrased_content}</div>
-                          </div> 
-                        : <div>{post.content}</div>}
-                    </div>
+                    {/* 貼文內容 */}
+                    {post.isRephrased && post.rephrased_content ? (
+                      <div className="post-content mb-4">
+                        <div className="original-content opacity-50 mb-2 line-through">
+                          <div className="text-xs text-gray-500 font-bold mb-1">原文：</div>
+                          {post.content}
+                        </div>
+                        <div className="rephrased-content bg-teal-50 p-3 border-l-4 border-teal-500 rounded">
+                          <div className="text-xs text-teal-700 font-bold mb-1">替代說法：</div>
+                          <div className="text-teal-800">
+                            {post.rephrased_content}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="post-content mb-4">
+                        {post.content}
+                      </div>
+                    )}
                     
+                    {/* 貼文操作 */}
                     <div className="post-footer flex gap-4">
                       <button 
-                        className="rephrase-btn flex items-center gap-1 px-3 py-1 bg-teal-400 border border-black hover:translate-y-[-2px] hover:shadow-md transition-all"
+                        className={`flex items-center gap-1 px-3 py-1 border border-black hover:translate-y-[-2px] hover:shadow-md transition-all ${
+                          post.isRephrased 
+                            ? "bg-white" 
+                            : "bg-teal-400"
+                        }`}
                         onClick={() => handleToggleRephrase(post)}
                       >
-                        換句話說
+                        {post.isRephrased ? "查看原文" : "換句話說"}
                       </button>
                       
                       <div className="post-action flex items-center gap-1 text-gray-500">
@@ -262,7 +287,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* Logout Button */}
+            {/* 登出按鈕 */}
             <div className="mt-8 text-center">
               <button 
                 onClick={logout}
