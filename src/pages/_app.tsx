@@ -2,8 +2,9 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { createContext, useContext, useState, useEffect } from "react";
+import { ThemeContext, themes, Theme, ThemeName, getSavedTheme, saveTheme } from "@/utils/theme";
 
-// 使用者型別定義
+// User type definition
 type User = {
   id: string;
   name: string;
@@ -11,7 +12,7 @@ type User = {
   avatar?: string;
 } | null;
 
-// 認證上下文型別
+// Auth context type
 type AuthContextType = {
   user: User;
   login: (user: User) => void;
@@ -19,7 +20,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
 };
 
-// 建立認證上下文
+// Create auth context
 const AuthContext = createContext<AuthContextType>({
   user: null,
   login: () => {},
@@ -27,55 +28,82 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
 });
 
-// 自定義 Hook 提供易用的認證狀態訪問
+// Custom hook for auth access
 export const useAuth = () => useContext(AuthContext);
 
+// LocalStorage Keys
+const USER_STORAGE_KEY = 'banyan_user';
+const POSTS_STORAGE_KEY = 'banyan_posts';
+
 export default function App({ Component, pageProps }: AppProps) {
+  // Auth state
   const [user, setUser] = useState<User>(null);
   
-  // 從 localStorage 檢查使用者是否已登入
+  // Theme state
+  const [theme, setThemeState] = useState<Theme>(themes.default);
+  
+  // Initialize from localStorage
   useEffect(() => {
     try {
-      // 從本地儲存中恢復使用者狀態
-      const storedUser = localStorage.getItem("banyan_user");
+      // Restore user state
+      const storedUser = localStorage.getItem(USER_STORAGE_KEY);
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        console.log("恢復使用者登入狀態:", parsedUser);
+        console.log("Restoring user login state:", parsedUser);
         setUser(parsedUser);
       }
+      
+      // Restore theme
+      const savedThemeName = getSavedTheme();
+      setThemeState(themes[savedThemeName]);
+      
     } catch (error) {
-      console.error("從本地儲存中恢復使用者狀態時發生錯誤:", error);
-      localStorage.removeItem("banyan_user");
+      console.error("Error restoring state from localStorage:", error);
+      localStorage.removeItem(USER_STORAGE_KEY);
     }
   }, []);
 
-  // 登入功能
+  // Login function
   const login = (userData: User) => {
-    console.log("登入使用者:", userData);
+    console.log("Logging in user:", userData);
     setUser(userData);
-    // 保存使用者狀態到本地儲存
-    localStorage.setItem("banyan_user", JSON.stringify(userData));
+    // Save user state to localStorage
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
   };
 
-  // 登出功能
+  // Logout function
   const logout = () => {
-    console.log("使用者登出");
+    console.log("User logging out");
     setUser(null);
-    // 從本地儲存中清除使用者狀態
-    localStorage.removeItem("banyan_user");
+    // Clear user state from localStorage
+    localStorage.removeItem(USER_STORAGE_KEY);
+  };
+  
+  // Theme change function
+  const setTheme = (themeName: ThemeName) => {
+    setThemeState(themes[themeName]);
+    saveTheme(themeName);
   };
 
-  // 提供認證資訊給所有子組件
+  // Auth context value
   const authContextValue = {
     user,
     login,
     logout,
     isAuthenticated: !!user,
   };
+  
+  // Theme context value
+  const themeContextValue = {
+    theme,
+    setTheme,
+  };
 
   return (
-    <AuthContext.Provider value={authContextValue}>
-      <Component {...pageProps} />
-    </AuthContext.Provider>
+    <ThemeContext.Provider value={themeContextValue}>
+      <AuthContext.Provider value={authContextValue}>
+        <Component {...pageProps} />
+      </AuthContext.Provider>
+    </ThemeContext.Provider>
   );
 }
