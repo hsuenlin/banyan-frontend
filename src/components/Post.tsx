@@ -1,4 +1,3 @@
-import { useState } from "react";
 import RephraseToggle from "@/components/RephraseToggle";
 
 interface PostProps {
