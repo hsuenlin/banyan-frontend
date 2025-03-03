@@ -33,7 +33,7 @@ export const useAuth = () => useContext(AuthContext);
 
 // LocalStorage Keys
 const USER_STORAGE_KEY = 'banyan_user';
-const POSTS_STORAGE_KEY = 'banyan_posts';
+// Removed unused POSTS_STORAGE_KEY
 
 export default function App({ Component, pageProps }: AppProps) {
   // Auth state
