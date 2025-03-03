@@ -70,7 +70,9 @@ function saveLocalPosts(posts: Post[]): void {
 export async function fetchPosts(): Promise<Post[]> {
   try {
     const url = cleanUrl(API_URL, 'posts');
-    console.log("Attempting to fetch posts from API:", url);
+    console.log("Full API URL:", url);
+    console.log("API_URL value:", API_URL);
+    console.log("Environment variable NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
     
     const res = await fetch(url, {
       method: 'GET',
@@ -80,21 +82,25 @@ export async function fetchPosts(): Promise<Post[]> {
       mode: 'cors',
     });
     
+    console.log("Response status:", res.status);
+    console.log("Response headers:", Object.fromEntries(res.headers.entries()));
+    
     if (!res.ok) {
       console.warn(`API returned error status: ${res.status}`);
-      throw new Error(`API returned status: ${res.status}`);
+      const errorText = await res.text();
+      console.warn(`Error response content: ${errorText}`);
+      throw new Error(`API returned status: ${res.status}, content: ${errorText}`);
     }
     
     const data = await res.json();
-    console.log("Successfully fetched posts from API:", data);
+    console.log("Successfully fetched API data:", data);
     
-    // Update local storage with API data
     saveLocalPosts(data);
     
     return data;
   } catch (error) {
-    console.warn('Using local storage posts, API error:', error);
-    // Return posts from localStorage
+    console.error('Complete fetch error:', error);
+    console.warn('Using local storage posts');
     return getLocalPosts();
   }
 }
