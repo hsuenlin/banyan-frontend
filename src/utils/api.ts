@@ -21,10 +21,12 @@ function cleanAndSecureUrl(url: string): string {
   }
 }
 
-// Fix the API_URL by ensuring it's a clean HTTPS URL
-const API_URL = cleanAndSecureUrl(
-  process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
-);
+// Function to get API URL instead of constant
+function getApiUrl(): string {
+  return cleanAndSecureUrl(
+    process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
+  );
+}
 
 // LocalStorage Key for posts
 const POSTS_STORAGE_KEY = 'banyan_posts';
@@ -76,9 +78,7 @@ function saveLocalPosts(posts: Post[]): void {
  */
 export async function fetchPosts(): Promise<Post[]> {
   try {
-    const baseUrl = cleanAndSecureUrl(
-      process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
-    );
+    const baseUrl = getApiUrl();
     const url = `${baseUrl}/posts`;
     
     console.log("Constructed HTTPS URL:", url);
@@ -131,9 +131,7 @@ export async function fetchPosts(): Promise<Post[]> {
  */
 export async function createPost(user_id: string, content: string): Promise<{ success: boolean }> {
   try {
-    const baseUrl = cleanAndSecureUrl(
-      process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
-    );
+    const baseUrl = getApiUrl();
     const url = `${baseUrl}/post`;
     
     const payload = {
@@ -210,9 +208,7 @@ export async function createPost(user_id: string, content: string): Promise<{ su
  */
 export async function rephraseContent(content: string): Promise<{ rephrased: string }> {
   try {
-    const baseUrl = cleanAndSecureUrl(
-      process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
-    );
+    const baseUrl = getApiUrl();
     const url = `${baseUrl}/rephrase`;
     
     console.log("Rephrase URL:", url);
