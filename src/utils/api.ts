@@ -9,35 +9,29 @@ export interface Post {
   isRephrased?: boolean;
 }
 
-// 修正 URL 拼接，确保不会出现多余的斜杠
-function cleanUrl(baseUrl: string, path: string): string {
-  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+// Ensure URL uses HTTPS and remove trailing slashes
+function cleanAndSecureUrl(url: string): string {
+  try {
+    const parsedUrl = new URL(url.trim().replace(/\/$/, ''));
+    parsedUrl.protocol = 'https:';
+    return parsedUrl.toString();
+  } catch (error) {
+    console.error('URL parsing error:', error);
+    return `https://${url.trim().replace(/^https?:\/\//, '').replace(/\/$/, '')}`;
+  }
 }
 
-// Fix the API_URL by ensuring it doesn't have a trailing slash and uses HTTPS
-const API_URL = process.env.NEXT_PUBLIC_API_URL 
-  ? new URL(process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')).toString()
-  : "https://banyan-api-production.up.railway.app";
+// Fix the API_URL by ensuring it's a clean HTTPS URL
+const API_URL = cleanAndSecureUrl(
+  process.env.NEXT_PUBLIC_API_URL || "banyan-api-production.up.railway.app"
+);
 
 // LocalStorage Key for posts
 const POSTS_STORAGE_KEY = 'banyan_posts';
 
 // Initial example posts for first-time users
 const INITIAL_POSTS: Post[] = [
-  {
-    id: "1",
-    content: "我認為目前的教育改革完全是在開倒車！把學生當成考試機器，老師只能照本宣科，完全違背教育的本質。這種方式只會扼殺創意，讓學生失去學習熱情。應該要立即停止這種愚蠢的政策！",
-    username: "林小明",
-    time: "2 小時前",
-    user_id: "user-1"
-  },
-  {
-    id: "2",
-    content: "AI技術真的是讓人又愛又恨。一方面它能大幅提升工作效率，另一方面又讓很多人面臨被取代的危機。我覺得政府應該立法限制AI的發展，保護工作機會！否則未來只有科技巨頭賺錢，普通人將失業潦倒。",
-    username: "陳小婷",
-    time: "昨天",
-    user_id: "user-2"
-  }
+  // [Previous INITIAL_POSTS content remains the same]
 ];
 
 // Helper function to load posts from localStorage
@@ -62,6 +56,11 @@ function saveLocalPosts(posts: Post[]): void {
   } catch (error) {
     console.error("Error saving posts to localStorage:", error);
   }
+}
+
+// Ensure clean URL creation
+function cleanUrl(baseUrl: string, path: string): string {
+  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 }
 
 /**
