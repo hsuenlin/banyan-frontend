@@ -9,16 +9,14 @@ export interface Post {
   isRephrased?: boolean;
 }
 
-// 确保 URL 使用 HTTPS 的辅助函数
-function ensureHttps(url: string): string {
-  const parsedUrl = new URL(url);
-  parsedUrl.protocol = 'https:';
-  return parsedUrl.toString();
+// 修正 URL 拼接，确保不会出现多余的斜杠
+function cleanUrl(baseUrl: string, path: string): string {
+  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 }
 
 // Fix the API_URL by ensuring it doesn't have a trailing slash and uses HTTPS
 const API_URL = process.env.NEXT_PUBLIC_API_URL 
-  ? ensureHttps(process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, ''))
+  ? new URL(process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')).toString()
   : "https://banyan-api-production.up.railway.app";
 
 // LocalStorage Key for posts
@@ -71,9 +69,10 @@ function saveLocalPosts(posts: Post[]): void {
  */
 export async function fetchPosts(): Promise<Post[]> {
   try {
-    console.log("Attempting to fetch posts from API:", `${API_URL}/posts`);
+    const url = cleanUrl(API_URL, 'posts');
+    console.log("Attempting to fetch posts from API:", url);
     
-    const res = await fetch(ensureHttps(`${API_URL}/posts`), {
+    const res = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -110,11 +109,12 @@ export async function createPost(user_id: string, content: string): Promise<{ su
       user_id: user_id
     };
     
+    const url = cleanUrl(API_URL, 'post');
     console.log("Attempting to post, data:", payload);
-    console.log("Target API URL:", `${API_URL}/post`);
+    console.log("Target API URL:", url);
     
     // Try with standard JSON format
-    const response = await fetch(ensureHttps(`${API_URL}/post`), {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -166,9 +166,10 @@ export async function createPost(user_id: string, content: string): Promise<{ su
  */
 export async function rephraseContent(content: string): Promise<{ rephrased: string }> {
   try {
+    const url = cleanUrl(API_URL, 'rephrase');
     console.log("Attempting to get rephrased content:", content);
     
-    const res = await fetch(ensureHttps(`${API_URL}/rephrase`), {
+    const res = await fetch(url, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json" 
