@@ -16,9 +16,14 @@ export default function PostList() {
   }, []);
 
   return (
-    <div>
+    <div className="space-y-6">
       {posts.map((post, index) => (
-        <Post key={index} content={post.content} username={post.username} time={post.time} />
+        <Post 
+          key={index} 
+          content={post.content} 
+          username={post.username} 
+          time={post.time} 
+        />
       ))}
     </div>
   );

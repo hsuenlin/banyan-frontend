@@ -1,42 +1,65 @@
-/* src/styles/globals.css */
+/* 保留原有的設置 */
+@import "tailwindcss";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles that will be overridden by theme */
+@theme {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
+  --background: #ffffff;
+  --foreground: #171717;
+  
+  /* 新增的顏色變數 */
   --black: #000000;
   --white: #FFFFFF;
   --light-gray: #F7F7F7;
   --mid-gray: #E0E0E0;
   --dark-gray: #888888;
-  --accent1: #4ECDC4;
-  --accent2: #FFD166;
-  --accent3: #FF6B6B;
+  --accent1: #FF6B6B;
+  --accent2: #4ECDC4;
+  --accent3: #FFD166;
   --accent4: #6B5CA5;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
 }
 
 body {
-  font-family: var(--font-sans);
-  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-h1, h2, h3 {
-  font-weight: 700;
-}
-
-/* Neo-brutalism styles */
-.shadow-md {
+/* 新增的樣式 */
+.shadow-box {
+  border: 1px solid var(--black);
   box-shadow: 4px 4px 0 var(--black);
+  background-color: var(--white);
+  padding: 20px;
+  margin-bottom: 30px;
+  position: relative;
 }
 
 button {
   cursor: pointer;
-  font-family: var(--font-sans);
+  border: 1px solid var(--black);
+  background: var(--white);
+  color: var(--black);
+  padding: 10px 20px;
   font-weight: 600;
   transition: all 0.1s ease-in-out;
+  box-shadow: 3px 3px 0 var(--black);
   position: relative;
+  overflow: hidden;
 }
 
 button:hover {
@@ -49,50 +72,33 @@ button:active {
   box-shadow: 1px 1px 0 var(--black);
 }
 
-/* Theme Transitions */
-.container, button, textarea, .post, .post-avatar, .post-mode {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+.rephrase-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid var(--black);
+  background-color: var(--accent2);
+  box-shadow: 2px 2px 0 var(--black);
+  cursor: pointer;
+  margin-right: 10px;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.rephrase-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--black);
 }
 
-.theme-selector button {
-  animation: fadeIn 0.5s ease;
+.post-mode {
+  padding: 3px 8px;
+  border: 1px solid var(--black);
+  background-color: var(--white);
+  margin-left: 10px;
+  font-size: 0.8em;
 }
 
-/* Special theme-specific overrides */
-[data-theme="neon"] .post-avatar {
-  box-shadow: 0 0 8px var(--accent1);
-}
-
-[data-theme="retro"] .post {
-  background-image: linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 100% 24px;
-}
-
-[data-theme="cool"] .post-textarea:focus {
-  border-color: var(--accent2);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(69, 123, 157, 0.2);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .container {
-    padding: 10px;
-  }
-  
-  .post-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .post-mode {
-    margin-top: 8px;
-    align-self: flex-end;
-  }
+.post-mode.alt {
+  background-color: var(--mid-gray);
+  color: var(--black);
 }
