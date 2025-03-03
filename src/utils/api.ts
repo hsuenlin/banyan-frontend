@@ -9,9 +9,16 @@ export interface Post {
   isRephrased?: boolean;
 }
 
-// Fix the API_URL by ensuring it doesn't have a trailing slash
+// 确保 URL 使用 HTTPS 的辅助函数
+function ensureHttps(url: string): string {
+  const parsedUrl = new URL(url);
+  parsedUrl.protocol = 'https:';
+  return parsedUrl.toString();
+}
+
+// Fix the API_URL by ensuring it doesn't have a trailing slash and uses HTTPS
 const API_URL = process.env.NEXT_PUBLIC_API_URL 
-  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+  ? ensureHttps(process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, ''))
   : "https://banyan-api-production.up.railway.app";
 
 // LocalStorage Key for posts
@@ -66,7 +73,7 @@ export async function fetchPosts(): Promise<Post[]> {
   try {
     console.log("Attempting to fetch posts from API:", `${API_URL}/posts`);
     
-    const res = await fetch(`${API_URL}/posts`, {
+    const res = await fetch(ensureHttps(`${API_URL}/posts`), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +114,7 @@ export async function createPost(user_id: string, content: string): Promise<{ su
     console.log("Target API URL:", `${API_URL}/post`);
     
     // Try with standard JSON format
-    const response = await fetch(`${API_URL}/post`, {
+    const response = await fetch(ensureHttps(`${API_URL}/post`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -161,7 +168,7 @@ export async function rephraseContent(content: string): Promise<{ rephrased: str
   try {
     console.log("Attempting to get rephrased content:", content);
     
-    const res = await fetch(`${API_URL}/rephrase`, {
+    const res = await fetch(ensureHttps(`${API_URL}/rephrase`), {
       method: "POST",
       headers: { 
         "Content-Type": "application/json" 
